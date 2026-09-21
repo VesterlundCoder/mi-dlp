@@ -1,0 +1,38 @@
+{
+  "name": "CRT-BOTH_p113_s123",
+  "p": 113,
+  "variant": "CRT-BOTH",
+  "crt_factors": [
+    7,
+    16
+  ],
+  "best_test_acc": 1.0,
+  "total_epochs": 18100,
+  "d_model": 128,
+  "n_layers": 2,
+  "n_triples": 5376,
+  "layers": {
+    "0": {
+      "acc_x": 0.10229386236825791,
+      "acc_x_shuffled": 0.008059516429014259,
+      "selectivity_x": 0.09423434593924365,
+      "acc_a": 0.48729076255424675,
+      "acc_a_shuffled": 0.14569125852448853,
+      "selectivity_a": 0.34159950402975825,
+      "acc_b": 0.45629262244265345,
+      "acc_b_shuffled": 0.07067575945443273,
+      "selectivity_b": 0.38561686298822073
+    },
+    "1": {
+      "acc_x": 1.0,
+      "acc_x_shuffled": 0.0037197768133911966,
+      "selectivity_x": 0.9962802231866088,
+      "acc_a": 1.0,
+      "acc_a_shuffled": 0.14011159330440173,
+      "selectivity_a": 0.8598884066955983,
+      "acc_b": 1.0,
+      "acc_b_shuffled": 0.06137631742095474,
+      "selectivity_b": 0.9386236825790453
+    }
+  }
+}

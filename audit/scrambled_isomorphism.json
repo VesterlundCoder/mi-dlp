@@ -1,0 +1,11 @@
+{
+  "same_permutation_all_positions": true,
+  "equality_preserved": true,
+  "original_intersection_size": 1,
+  "scrambled_intersection_size": 1,
+  "intersection_preserved": true,
+  "weight_tying": false,
+  "conjugate_at_init": true,
+  "max_logit_diff": 0.0,
+  "conclusion": "SCRAMBLED is EXACTLY conjugate to CRT at initialization via input embedding permutation. The two models are not meaningfully different from the model's perspective at init. Any behavioral difference during training must come from optimization dynamics, not from the representation itself. SCRAMBLED does NOT test destruction of algebraic structure."
+}

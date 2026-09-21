@@ -1,0 +1,53 @@
+{
+  "p113": {
+    "p": 113,
+    "N": 112,
+    "a": 7,
+    "b": 16,
+    "gcd_ab": 1,
+    "product_ab": 112,
+    "num_elements": 112,
+    "num_pairs": 112,
+    "collisions": 0,
+    "order_violations": 0,
+    "bezout_s": 7,
+    "bezout_t": -3,
+    "bezout_errors": 0,
+    "bezout_ok": true,
+    "invertible": true
+  },
+  "p337": {
+    "p": 337,
+    "N": 336,
+    "a": 3,
+    "b": 112,
+    "gcd_ab": 1,
+    "product_ab": 336,
+    "num_elements": 336,
+    "num_pairs": 336,
+    "collisions": 0,
+    "order_violations": 0,
+    "bezout_s": -37,
+    "bezout_t": 1,
+    "bezout_errors": 0,
+    "bezout_ok": true,
+    "invertible": true
+  },
+  "p601": {
+    "p": 601,
+    "N": 600,
+    "a": 3,
+    "b": 200,
+    "gcd_ab": 1,
+    "product_ab": 600,
+    "num_elements": 600,
+    "num_pairs": 600,
+    "collisions": 0,
+    "order_violations": 0,
+    "bezout_s": 67,
+    "bezout_t": -1,
+    "bezout_errors": 0,
+    "bezout_ok": true,
+    "invertible": true
+  }
+}

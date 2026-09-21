@@ -1,0 +1,26 @@
+{
+  "p113": {
+    "p": 113,
+    "N": 112,
+    "generator": 3,
+    "num_triples_checked": 112,
+    "errors": 0,
+    "all_valid": true
+  },
+  "p337": {
+    "p": 337,
+    "N": 336,
+    "generator": 10,
+    "num_triples_checked": 336,
+    "errors": 0,
+    "all_valid": true
+  },
+  "p601": {
+    "p": 601,
+    "N": 600,
+    "generator": 7,
+    "num_triples_checked": 600,
+    "errors": 0,
+    "all_valid": true
+  }
+}

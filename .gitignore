@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Large artifacts (not tracked in git)
+experiments/**/checkpoints/*.pt
+experiments/**/metrics.jsonl
+*.pt
+*.npz
+*.log
+
+# PySR outputs
+outputs/

@@ -1,0 +1,34 @@
+{
+  "int_offset": 4,
+  "special_tokens": {
+    "PAD": 0,
+    "SEP": 1,
+    "BOS": 2,
+    "EOS": 3
+  },
+  "p113": {
+    "token_range": [
+      4,
+      117
+    ],
+    "vocab_size_needed": 118,
+    "zero_mappings_in_scrambled": 0
+  },
+  "weight_tying": false,
+  "namespace_shared": true,
+  "numeric_meaning": "NONE - tokens are purely categorical via learned embedding",
+  "embedding_type": "nn.Embedding (learned lookup table, no positional/numeric encoding of token value)",
+  "output_type": "nn.Linear (separate from input embedding, not tied)",
+  "zero_element_issue": {
+    "group_elements": "1..p-1 (never 0)",
+    "crt_projections": "1..p-1 (never 0, since F_p* is closed under multiplication)",
+    "scramble_map_range": "0..p-1 (CAN map to 0, creating invalid token)",
+    "zero_mappings_count": 0,
+    "issue_exists": false
+  },
+  "namespace_collision": {
+    "description": "Group element token tok(y) and output label token tok(x) share the same embedding row when y == x",
+    "impact": "Input group element and output exponent with same numeric value share learned representation",
+    "severity": "MEDIUM - may create unintended input-output coupling"
+  }
+}

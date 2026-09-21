@@ -1,0 +1,106 @@
+{
+  "name": "RAW_p113_s42",
+  "variant": "RAW",
+  "p": 113,
+  "baseline_accuracy": 0.968,
+  "L0_A_k2": {
+    "delta": -0.11599999999999999,
+    "variance_fraction": 0.6335174559295181,
+    "percentile": 0.0
+  },
+  "L0_A_k4": {
+    "delta": -0.118,
+    "variance_fraction": 0.7139905177499741,
+    "percentile": 0.0
+  },
+  "L0_B_k2": {
+    "delta": -0.18199999999999994,
+    "variance_fraction": 0.8254030210519036,
+    "percentile": 0.0
+  },
+  "L0_B_k4": {
+    "delta": -0.25,
+    "variance_fraction": 0.9968825344874487,
+    "percentile": 0.0
+  },
+  "L0_B_k8": {
+    "delta": -0.22799999999999998,
+    "variance_fraction": 0.9999975208073395,
+    "percentile": 0.0
+  },
+  "L0_B_k16": {
+    "delta": -0.21199999999999997,
+    "variance_fraction": 0.9999999966487532,
+    "percentile": 0.0
+  },
+  "L0_AB_k2": {
+    "delta": -0.17399999999999993,
+    "variance_fraction": 0.8236824563987175,
+    "percentile": 0.0
+  },
+  "L0_AB_k4": {
+    "delta": -0.244,
+    "variance_fraction": 0.9996539641483688,
+    "percentile": 0.0
+  },
+  "L0_AB_k8": {
+    "delta": -0.22799999999999998,
+    "variance_fraction": 0.9999994191830237,
+    "percentile": 0.0
+  },
+  "L0_AB_k16": {
+    "delta": -0.21399999999999997,
+    "variance_fraction": 0.9999999997459103,
+    "percentile": 0.0
+  },
+  "L1_A_k2": {
+    "delta": -0.6279999999999999,
+    "variance_fraction": 0.4023675020536133,
+    "percentile": 0.0
+  },
+  "L1_A_k4": {
+    "delta": -0.894,
+    "variance_fraction": 0.7326970106499289,
+    "percentile": 0.0
+  },
+  "L1_B_k2": {
+    "delta": -0.608,
+    "variance_fraction": 0.3702180866004687,
+    "percentile": 0.0
+  },
+  "L1_B_k4": {
+    "delta": -0.888,
+    "variance_fraction": 0.7378263843793794,
+    "percentile": 0.0
+  },
+  "L1_B_k8": {
+    "delta": -0.968,
+    "variance_fraction": 0.9997637422889922,
+    "percentile": 0.0
+  },
+  "L1_B_k16": {
+    "delta": -0.968,
+    "variance_fraction": 0.9998385862391417,
+    "percentile": 0.0
+  },
+  "L1_AB_k2": {
+    "delta": -0.6859999999999999,
+    "variance_fraction": 0.45102311096428693,
+    "percentile": 0.0
+  },
+  "L1_AB_k4": {
+    "delta": -0.9239999999999999,
+    "variance_fraction": 0.8542173163179873,
+    "percentile": 0.0
+  },
+  "L1_AB_k8": {
+    "delta": -0.968,
+    "variance_fraction": 0.9999222443583434,
+    "percentile": 0.0
+  },
+  "L1_AB_k16": {
+    "delta": -0.96,
+    "variance_fraction": 0.9999742507886988,
+    "percentile": 0.0
+  }
+}

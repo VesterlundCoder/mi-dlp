@@ -1,0 +1,8 @@
+representation,factorized,algebraic_alignment,invertible,info_preserving,two_coordinate,true_factor_partition,group_law_preserved,element_orders_preserved,same_seq_len_as_crt,target_free,S_hom,S_trans,ARI_A,ARI_B,seq_len,n_channels,n_params
+RAW,No,N/A,No,Yes,No,Hidden,Yes,Yes,No,Yes,N/A,N/A,N/A,N/A,5,1,427253
+TRUE_CRT,Yes,Yes,Yes,Yes,Yes,Yes,Yes,Yes,Yes,Yes,1.0000,1.0000,1.0000,1.0000,9,2,428277
+CURRENT_SCRAMBLED,Yes,Yes,Yes,Yes,Yes,Yes,Yes,Yes,Yes,Yes,1.0000,1.0000,1.0000,1.0000,9,2,428277
+PERMUTED_CRT,Yes,Partial,Yes,Yes,Yes,Yes,Partial,Yes,Yes,Yes,1.0000,1.0000,1.0000,1.0000,9,2,428277
+GLOBAL_RANDOM_BIJECTION,Yes,No,Yes,Yes,Yes,No,No,No,No,Yes,0.0083,0.0474,0.0053,N/A,9,2,428022
+ORDER_MATCHED_RANDOM,Yes,No,Yes,Yes,Yes,No,No,No,Yes,Yes,0.0499,0.0749,N/A,N/A,9,2,428022
+MIXED_RADIX,Yes,No,Yes,Yes,Yes,No,No,No,Partial,Yes,0.0235,0.0327,0.0089,-0.0131,9,2,428022

@@ -1,0 +1,35 @@
+{
+  "p113": {
+    "p": 113,
+    "N": 112,
+    "num_candidates": 111,
+    "num_generators": 48,
+    "num_verified": 48,
+    "phi_N": 48,
+    "expected_count": 48,
+    "count_matches": true,
+    "all_verified": true
+  },
+  "p337": {
+    "p": 337,
+    "N": 336,
+    "num_candidates": 335,
+    "num_generators": 96,
+    "num_verified": 96,
+    "phi_N": 96,
+    "expected_count": 96,
+    "count_matches": true,
+    "all_verified": true
+  },
+  "p601": {
+    "p": 601,
+    "N": 600,
+    "num_candidates": 599,
+    "num_generators": 160,
+    "num_verified": 160,
+    "phi_N": 160,
+    "expected_count": 160,
+    "count_matches": true,
+    "all_verified": true
+  }
+}

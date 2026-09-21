@@ -1,0 +1,39 @@
+{
+  "audit_date": "2025-09-21",
+  "scrambled_conjugacy_test": {
+    "max_logit_difference": 0.0,
+    "conjugate_at_initialization": true,
+    "conclusion": "CURRENT SCRAMBLED is exactly conjugate to CRT at initialization. It does NOT destroy algebraic structure."
+  },
+  "algebraic_structure_scores": {
+    "TRUE_CRT": {"S_hom": 1.0, "S_trans": 1.0, "ARI_A": 1.0, "ARI_B": 1.0},
+    "CURRENT_SCRAMBLED": {"S_hom": 1.0, "S_trans": 1.0, "ARI_A": 1.0, "ARI_B": 1.0},
+    "GLOBAL_RANDOM_BIJECTION_R3": {"S_hom_mean": 0.0083, "S_trans_mean": 0.0474, "ARI_A_mean": 0.0053},
+    "MIXED_RADIX_R4": {"S_hom": 0.0235, "S_trans": 0.0327, "ARI_A": 0.0089, "ARI_B": -0.0131},
+    "ORDER_MATCHED_R3O": {"S_hom_mean": 0.0499, "S_trans_mean": 0.0749}
+  },
+  "negative_control_training": {
+    "GLOBAL_RANDOM_BIJECTION_p113_m42_s42": {
+      "status": "training_ongoing",
+      "epoch": 9000,
+      "train_acc": 1.0,
+      "test_acc": 0.058,
+      "wd": 0.293,
+      "grokked": false,
+      "interpretation": "R3 has fully memorized and WD ramped to near-max, but test accuracy remains at chance. Strong evidence that destroying the group law prevents grokking."
+    }
+  },
+  "crt_invertibility": {
+    "p113": {"invertible": true, "collisions": 0, "bezout_errors": 0},
+    "p337": {"invertible": true, "collisions": 0, "bezout_errors": 0},
+    "p601": {"invertible": true, "collisions": 0, "bezout_errors": 0}
+  },
+  "conclusions": {
+    "Q1": "NO - SCRAMBLED is exactly conjugate to CRT at initialization",
+    "Q2": "YES - CRT uses input-derived projections, no target leakage",
+    "Q3": "YES - R3 has S_hom=0.008, truly destroys group law",
+    "Q4": "PARTIALLY - sequence length and params matched",
+    "Q5": "PARTIALLY - final-state results robust",
+    "Q6": "PENDING - R3 training ongoing, early results show R3 fails to grok"
+  }
+}

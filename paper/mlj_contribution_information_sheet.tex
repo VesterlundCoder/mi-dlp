@@ -1,0 +1,100 @@
+\documentclass[9pt,a4paper]{extarticle}
+
+% Machine Learning Journal (Springer) Contribution Information Sheet.
+% MLJ requires exactly four questions in a separate 1-2 page document.
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{natbib}
+\usepackage{amsmath,amssymb}
+\usepackage[margin=0.75in]{geometry}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{microtype}
+
+\newcommand{\Shom}{S_{\mathrm{hom}}}
+\newcommand{\EAB}{E_{AB}}
+\newcommand{\EA}{E_A}
+\newcommand{\EB}{E_B}
+\newcommand{\Rint}{R_{\mathrm{int}}}
+\newcommand{\ARI}{\mathrm{ARI}}
+\newcommand{\Fp}{\mathbb{F}_p^*}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\Tgrok}{T_{\mathrm{grok}}}
+
+\title{Machine Learning Journal --- Contribution Information Sheet}
+
+\author{David Vesterlund \\
+Industrial Research at Vesterlund Ventures Holding AB \\
+\texttt{david@vesterlundventures.se}}
+
+\date{}
+\setlist{nosep,leftmargin=*,topsep=2pt,parsep=2pt}
+
+\begin{document}
+\maketitle
+
+\noindent\textbf{Manuscript:} Mechanistic Interpretability of Discrete Logarithm Grokking: How Representation Determines the Internal Algorithm
+
+\medskip
+
+% ====================================================================
+\section*{1. What is the main claim of the paper? Why is this an important contribution to the machine learning literature?}
+% ====================================================================
+
+The main claim of this paper is that the representation of an algebraic learning problem can determine the internal algorithm learned by a neural network, rather than merely affecting the speed or ease of learning.
+
+We study this question in transformers trained to solve the discrete logarithm problem (DLP), comparing a raw representation of the group elements with representations that expose or disrupt the Chinese Remainder Theorem (CRT) factorization of the underlying cyclic group. Although the representations encode the same target computation, they lead to qualitatively different internal organizations.
+
+In the RAW representation, the learned hidden representation is strongly nonseparable across CRT factors, with approximately 65\% of the relevant Fourier energy in joint $A \times B$ interaction modes. In the explicitly factorized CRT representation, the corresponding interaction energy is approximately 1\%, yielding an almost separable internal representation.
+
+The importance of this result is broader than the specific DLP benchmark. Mechanistic interpretability often asks what algorithm a trained neural network has discovered. Our results show that there may be no unique answer determined solely by the task: the representation through which the task is presented can select between substantially different internal computational organizations.
+
+The paper also identifies an important methodological issue for interpretability research. A representation that appears to be ``scrambled'' at the symbolic level may be computationally equivalent to the original representation when the model uses learned categorical embeddings. We prove that the previously considered SCRAMBLED representation is exactly conjugate to CRT through an embedding-row permutation and verify numerically that the corresponding models can produce identical logits. This illustrates a general pitfall when constructing negative controls for representation-learning and mechanistic-interpretability experiments.
+
+We therefore distinguish factorization from algebraic alignment by constructing an information-preserving Global Random Bijection that retains the same two-coordinate interface and cardinalities as CRT while destroying the group law. Within the experimental timescale on which CRT achieves near-perfect generalization, this algebra-destroying control does not generalize, providing evidence that algebraic alignment, rather than factorization alone, is responsible for the rapid generalization observed with CRT.
+
+% ====================================================================
+\section*{2. What is the evidence you provide to support your claim? Be precise.}
+% ====================================================================
+
+We provide four complementary forms of evidence.
+
+\paragraph{First, representation-dependent Fourier structure.} We introduce a two-dimensional Fourier decomposition indexed by the CRT coordinates $x \leftrightarrow (x \bmod 7, x \bmod 16)$. This separates the hidden-state energy into modes associated with the first CRT factor, the second factor, and joint interaction modes. The grokked RAW model has $\EAB \approx 0.65$ and $\Rint \approx 0.66$, whereas the CRT model has $\EAB \approx 0.01$ and $\Rint \approx 0.03$. Thus the two representations produce qualitatively different internal organizations despite solving the same target problem.
+
+\paragraph{Second, temporal evidence.} Using 32 checkpoints from the RAW training trajectory, we find that interaction energy develops substantially before visible generalization. $\EAB$ rises from approximately 0.35 to 0.52 between epochs 15,000 and 30,000 while held-out performance remains far below the later grokked level. CRT components $x \bmod 7$ and $x \bmod 16$ also become partially linearly decodable well before full DLP accuracy reaches 95\%. These results indicate that structured internal representations emerge during the memorization plateau rather than appearing only as a consequence of successful generalization.
+
+\paragraph{Third, causal interventions.} We construct Fourier-derived subspaces $U_A$, $U_B$, and $U_{AB}$ and remove them from hidden activations using projection interventions with a dose-response design. Targeted removal causes severe losses of predictive accuracy, while matched random-subspace controls provide a baseline for assessing specificity. In the RAW model, complete removal of the three targeted subspaces reduces accuracy by approximately 0.93--0.95; corresponding random controls are substantially less damaging. Targeted $A$- and $B$-mode interventions similarly produce large effects in the CRT model. The monotonic dose-response relationship provides additional evidence that the identified Fourier structure is functionally involved in the computation rather than merely correlated with it.
+
+\paragraph{Fourth, controlled destruction of algebraic structure.} TRUE CRT has homomorphism score $\Shom = 1$, whereas the Global Random Bijection has $\Shom \approx 0.008$, despite preserving information content, coordinate cardinalities, sequence length, and the factorized interface. CRT reaches near-perfect generalization at approximately 20K epochs, while the algebra-destroying representation has not generalized on this timescale despite memorizing the training set and receiving the same regularization schedule. A hierarchy of controls further shows that representations preserving the true CRT factor partition (PERMUTED CRT, ROLE-DECOUPLED CRT) grok, while representations destroying the partition (Global Random Bijection, Order-Matched Random, Mixed Radix) fail to grok even after 100K epochs across 3 independent mapping seeds.
+
+Together, these experiments connect representation choice, internal structure, training dynamics, causal function, and generalization behavior within one controlled algebraic setting.
+
+% ====================================================================
+\section*{3. What papers by other authors make the most closely related contributions, and how is your paper related to them?}
+% ====================================================================
+
+The closest line of work begins with Nanda et al.\ (2023), ``Progress Measures for Grokking via Mechanistic Interpretability.'' They reverse-engineer grokked transformers trained on modular addition and show that the learned computation uses Fourier representations and trigonometric identities. They further demonstrate that structured mechanisms develop continuously before the apparently abrupt grokking transition. Our work adopts the same general mechanistic philosophy but studies an inverse group problem and, crucially, intervenes on the representation of the same underlying task to test whether representation changes the learned algorithm.
+
+Chughtai, Chan, and Nanda (2023) study neural networks implementing finite-group composition using representation-theoretic circuits and find mixed evidence for universality: models can implement the same group task using different precise circuits. Stander et al.\ (2024) similarly reverse-engineer grokked networks on permutation-group multiplication, using causal interventions to validate coset-based mechanisms and emphasizing the difficulty of distinguishing competing mechanistic explanations. Our work differs by holding the task and architecture largely fixed while deliberately changing the representation, allowing us to study representation as a causal variable in algorithm selection.
+
+Furuta et al.\ (2024) extend Fourier-based mechanistic analysis from modular addition to a broader family of modular polynomial tasks and show that different modular operations can yield distinctive internal circuits. Our contribution is complementary: rather than comparing different target operations, we compare different representations of the same target computation.
+
+A particularly relevant recent result is McCracken et al.\ (2025), who propose an approximate Chinese Remainder Theorem framework that unifies seemingly different neural implementations of modular addition. Our work uses the CRT from a different direction: we expose or destroy CRT-aligned structure in the input representation and measure how this changes the learned computation.
+
+Finally, Nguyen (2026), ``The Discrete-Log Clock,'' shows that transformers trained on modular multiplication become sparse and interpretable when analyzed in the multiplicative-character basis, with discrete-log coordinates providing the natural representation. Our work studies the discrete logarithm itself as the target function and asks a different question: how explicit algebraic factorization of the input changes the internal algorithm, its temporal development, and its causal organization.
+
+% ====================================================================
+\section*{4. Have you published parts of your paper before, for instance in a conference? If so, give details of your previous paper(s) and a precise statement detailing how your paper provides a significant contribution beyond the previous paper(s).}
+% ====================================================================
+
+No part of the present manuscript has been published in a conference or journal.
+
+For transparency, a related but scientifically distinct manuscript, ``Grokking the Discrete Logarithm: Scaling Across Model Capacity and Mechanistic Analysis,'' is currently under review at the Journal of Machine Learning Research. That work is archived on Zenodo with DOI \texttt{10.5281/zenodo.22813397} and primarily studies the existence and scaling behavior of DLP grokking across neural capacity, including a twelve-model sweep from approximately 90K to 14.4M parameters, together with broader analyses of training dynamics and algebraic structure.
+
+The present manuscript asks a different scientific question: how does input representation determine the internal algorithm learned by a network solving DLP? It compares RAW and CRT-derived representations under a fixed model setting and introduces results not central to the related manuscript: a two-dimensional CRT Fourier decomposition, direct comparison of separable and interaction-rich internal algorithms, temporal analysis of those representations, causal Fourier-subspace interventions, a proof that the previous SCRAMBLED control is conjugate to CRT, and a hierarchy of information-preserving negative controls (Global Random Bijection, Order-Matched Random, Mixed Radix, Permuted CRT, Role-Decoupled CRT).
+
+The two manuscripts therefore share the DLP benchmark, the M04 anchor architecture, and the RAW baseline setting, but their principal hypotheses, experimental interventions, mechanistic analyses, and scientific conclusions are distinct. All code and data for the present manuscript are available at \texttt{https://github.com/VesterlundCoder/mi-dlp}.
+
+\end{document}

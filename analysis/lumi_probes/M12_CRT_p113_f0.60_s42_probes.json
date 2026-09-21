@@ -1,0 +1,38 @@
+{
+  "name": "M12_CRT_p113_f0.60_s42",
+  "p": 113,
+  "variant": "CRT-BOTH",
+  "crt_factors": [
+    7,
+    16
+  ],
+  "best_test_acc": 0.99953509995351,
+  "total_epochs": 5100,
+  "d_model": 768,
+  "n_layers": 2,
+  "n_triples": 5376,
+  "layers": {
+    "0": {
+      "acc_x": 0.5809051456912585,
+      "acc_x_shuffled": 0.011779293242405457,
+      "selectivity_x": 0.569125852448853,
+      "acc_a": 1.0,
+      "acc_a_shuffled": 0.1407315561066336,
+      "selectivity_a": 0.8592684438933664,
+      "acc_b": 0.8003719776813392,
+      "acc_b_shuffled": 0.0675759454432734,
+      "selectivity_b": 0.7327960322380658
+    },
+    "1": {
+      "acc_x": 1.0,
+      "acc_x_shuffled": 0.008679479231246125,
+      "selectivity_x": 0.9913205207687539,
+      "acc_a": 1.0,
+      "acc_a_shuffled": 0.12833230006199628,
+      "selectivity_a": 0.8716676999380037,
+      "acc_b": 1.0,
+      "acc_b_shuffled": 0.0712957222566646,
+      "selectivity_b": 0.9287042777433354
+    }
+  }
+}

@@ -1,0 +1,541 @@
+\documentclass[11pt,a4paper]{article}
+
+% Machine Learning Journal (Springer) submission format.
+% The official sn-jnl.cls is not available locally; using standard article
+% with formatting that can be adapted to the Springer Nature template.
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{natbib}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{cleveref}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage{multirow}
+\usepackage{enumitem}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+
+% Theorem environments
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{proposition}{Proposition}
+\newtheorem{corollary}{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}
+
+% Macros
+\newcommand{\Fp}{\mathbb{F}_p^*}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\KL}{D_{\mathrm{KL}}}
+\newcommand{\Shom}{S_{\mathrm{hom}}}
+\newcommand{\Strans}{S_{\mathrm{trans}}}
+\newcommand{\ARI}{\mathrm{ARI}}
+\newcommand{\EAB}{E_{AB}}
+\newcommand{\EA}{E_A}
+\newcommand{\EB}{E_B}
+\newcommand{\Rint}{R_{\mathrm{int}}}
+\newcommand{\Rsep}{R_{\mathrm{sep}}}
+\newcommand{\Aeq}{A_{\mathrm{eq}}}
+\newcommand{\Tgrok}{T_{\mathrm{grok}}}
+\newcommand{\Tmem}{T_{\mathrm{mem}}}
+\newcommand{\dmodel}{d_{\mathrm{model}}}
+
+\title{Mechanistic Interpretability of Discrete Logarithm Grokking: \\
+How Representation Determines the Internal Algorithm}
+
+\author{David Vesterlund\thanks{Corresponding author: \texttt{david@vesterlundventures.se}} \\
+Industrial Research at Vesterlund Ventures Holding AB \\
+\texttt{david@vesterlundventures.se}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We study the mechanistic interpretability of grokking on the discrete logarithm problem (DLP). For a cyclic group $G = \langle g \rangle$ of order $N = p - 1$, a transformer is trained to predict $x$ from $(g, h = g^x)$. We compare representations that factor the problem via the Chinese Remainder Theorem (CRT) against the raw representation, and ask: \emph{what internal algorithm does the network discover, and how does the representation determine it?}
+
+Our key findings are: (1)~DLP exhibits grokking, and algebraically aligned CRT projections substantially accelerate generalization compared to the raw representation. (2)~RAW and CRT-trained models develop markedly different algebraic representations, distinguished by the cross-factor interaction energy $\EAB$ in a 2D CRT Fourier decomposition (RAW: $\EAB \approx 0.65$; CRT: $\EAB \approx 0.01$). (3)~The interaction-rich representation in RAW forms \emph{during the plateau}, well before visible generalization. (4)~Information-matched controls that destroy the true algebraic structure (Global Random Bijection, $\Shom \approx 0.008$) lose CRT's rapid-generalization advantage, supporting a requirement for algebraic alignment---not merely factorization---in the rapid-generalization regime observed with CRT.
+
+A critical methodological audit reveals that the previously studied ``SCRAMBLED'' representation is exactly conjugate to CRT at initialization (max logit difference $= 0$), preserving all algebraic structure. It does not test destruction of algebra and cannot serve as evidence that algebraic alignment is unnecessary. A hierarchy of negative controls further shows that representations preserving the true CRT factor partition grok (PERMUTED CRT at $\sim$8K epochs, ROLE-DECOUPLED CRT at $\sim$26K), while representations destroying the partition fail to grok even after 100K epochs (Global Random Bijection, Order-Matched Random, Mixed Radix). Top-$k$ causal ablation with 100 rank-matched and variance-matched random controls confirms that $A$-, $B$-, and $AB$-Fourier modes are causally necessary for computation ($\Delta A_x < -0.89$ for $k \geq 4$ vs.\ $|\Delta| < 0.012$ for random controls, $p < 0.01$).
+\end{abstract}
+
+% ====================================================================
+\section{Introduction}
+% ====================================================================
+
+Grokking---the phenomenon where a model memorizes training data long before generalizing to test data---has become a central object of study in deep learning theory \citep{power2022grokking, nanda2023progress}. Most prior work studies grokking on algorithmic tasks (modular addition, polynomial evaluation) where the target function has a known algebraic structure.
+
+The discrete logarithm problem (DLP) provides a particularly rich testbed. For a prime $p$, the multiplicative group $\Fp$ is cyclic of order $N = p-1$. Given a generator $g$ and $h = g^x$, the task is to predict $x$. The CRT decomposition $N = a \cdot b$ (with $\gcd(a,b)=1$) yields a natural factorization: $x \bmod a$ and $x \bmod b$ can be recovered independently from subgroup projections $h^{N/a}$ and $h^{N/b}$.
+
+This setup allows us to ask a question that goes beyond \emph{whether} grokking occurs: \emph{what internal algorithm does the network discover, and how does the input representation determine it?}
+
+\paragraph{Relationship to prior work.} A companion manuscript \citep{vesterlund2026grokking} studies the existence and scaling behavior of DLP grokking across a 12-model capacity sweep (90K--14.4M parameters), establishing that DLP grokking recurs across model scales and that the anchor model (M04, 427K parameters) develops multiplicative-character/Fourier alignment. The present manuscript asks a scientifically distinct question: \emph{how does input representation determine the internal algorithm?} The two manuscripts share the DLP benchmark, the M04 anchor architecture, and the RAW baseline setting, but their principal hypotheses, experimental interventions, and conclusions are distinct. Specifically, the present work introduces: (i) a 2D CRT Fourier decomposition separating factor-specific from interaction modes; (ii) direct comparison of separable (CRT) and interaction-rich (RAW) internal organizations; (iii) temporal analysis of interaction-energy formation before grokking; (iv) top-$k$ causal Fourier-subspace interventions with rank-matched and variance-matched random controls; (v) a proof that the previously studied SCRAMBLED control is exactly conjugate to CRT; and (vi) a hierarchy of information-preserving negative controls (Global Random Bijection, Order-Matched Random, Mixed Radix, Permuted CRT, Role-Decoupled CRT) that systematically vary which algebraic properties are preserved. None of these contributions appear in the companion manuscript. See \Cref{sec:differences} for a detailed comparison.
+
+\paragraph{Contributions.}
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Different internal representations} (\Cref{sec:fourier}): RAW and CRT models develop qualitatively different Fourier spectra. RAW has high interaction energy ($\EAB \approx 0.65$); CRT has low interaction energy ($\EAB \approx 0.01$). This is a robust difference across 25+ checkpoints.
+    \item \textbf{Temporal formation} (\Cref{sec:temporal}): The interaction-rich representation in RAW forms \emph{during the plateau}, $\sim$20K epochs before grokking. CRT components ($x \bmod 7$, $x \bmod 16$) become linearly decodable before full generalization.
+    \item \textbf{SCRAMBLED audit} (\Cref{sec:audit}): The previously studied SCRAMBLED representation is exactly conjugate to CRT at initialization (max logit diff $= 0$), preserving all algebraic structure ($\Shom = 1.0$). It does \emph{not} test destruction of algebra.
+    \item \textbf{Hierarchy of negative controls} (\Cref{sec:controls}): We introduce a hierarchy of information-preserving controls. Representations preserving the true CRT factor partition grok (PERMUTED CRT at $\sim$8K, ROLE-DECOUPLED CRT at $\sim$26K), while representations destroying the partition fail to grok even after 100K epochs (Global Random Bijection: 3 mapping seeds, all fail; Order-Matched Random; Mixed Radix). This supports a requirement for algebraic alignment in the rapid-generalization regime.
+    \item \textbf{Causal ablation} (\Cref{sec:causal}): Top-$k$ Fourier-subspace ablation with 100 rank-matched and variance-matched random controls confirms that $A$-, $B$-, and $AB$-modes are causally necessary ($\Delta A_x < -0.89$ for $k \geq 4$, $p < 0.01$).
+\end{enumerate}
+
+% ====================================================================
+\section{Background and Setup}
+% ====================================================================
+
+\subsection{The Discrete Logarithm Problem}
+
+Let $p$ be prime and $G = \Fp = \{1, \ldots, p-1\}$ the cyclic multiplicative group of order $N = p-1$. For a generator $g$ and exponent $x \in \Z_N$, the pair $(g, h = g^x \bmod p)$ defines a DLP instance with target $x$.
+
+We use $p = 113$ ($N = 112 = 7 \cdot 16$) as our primary setting, with $\gcd(7, 16) = 1$. The CRT decomposition gives:
+\begin{equation}
+    x \leftrightarrow (x \bmod 7,\; x \bmod 16) \in \Z_7 \times \Z_{16}.
+\end{equation}
+The CRT projections are $\pi_A(y) = y^{N/a} = y^{16}$ and $\pi_B(y) = y^{N/b} = y^7$, with B\'ezout reconstruction $y = (y^{16})^4 (y^7)^{-9} \pmod{113}$ since $16(4) + 7(-9) = 1$.
+
+\subsection{Representations}
+\label{sec:representations}
+
+We study the following input representations, all derived from the \emph{public} group elements $g$ and $h$ (no target leakage):
+
+\begin{description}[leftmargin=*]
+    \item[\textbf{RAW} (R0):] Tokens $[\text{BOS}, g, \text{SEP}, h, \text{EOS}]$. Sequence length 5. No factorization.
+    \item[\textbf{TRUE CRT} (R1):] Tokens $[\text{BOS}, g_b, \text{SEP}, g_a, \text{SEP}, h_b, \text{SEP}, h_a, \text{EOS}]$ where $g_a = g^{N/a}$, $g_b = g^{N/b}$. Sequence length 9. Factorized and algebraically aligned.
+    \item[\textbf{PERMUTED CRT} (R2):] Same as CRT but with independent per-factor permutations $\pi_A, \pi_B$ applied to subgroup elements. Factorized, preserves A/B partition, destroys within-factor ordering.
+    \item[\textbf{GLOBAL RANDOM BIJECTION} (R3):] A random bijection $\phi: G \to \Z_a \times \Z_b$ with no relationship to CRT factors. Factorized, information-preserving, but \emph{destroys the group law} ($\Shom \approx 0.008$) and the true factor partition.
+    \item[\textbf{ORDER-MATCHED RANDOM} (R3O):] Random bijection constrained to preserve element-order statistics. Destroys the multiplication table while preserving order distribution.
+    \item[\textbf{MIXED RADIX} (R4):] Enumerate group elements by sorted order $j(y)$, split as $(\lfloor j/b \rfloor, j \bmod b)$. Factorized, deterministic, non-algebraic.
+    \item[\textbf{ROLE-DECOUPLED CRT}:] CRT channels with \emph{different} random permutations for generator vs.\ result positions ($\pi_{A,g} \neq \pi_{A,h}$). Preserves A/B partition but destroys the shared relabeling conjugacy that made SCRAMBLED trivial.
+    \item[\textbf{CURRENT SCRAMBLED}:] Same permutation $\pi$ applied to all CRT positions. \emph{Audit reveals this is conjugate to CRT} (see \Cref{sec:audit}).
+\end{description}
+
+\subsection{Model and Training Protocol}
+\label{sec:protocol}
+
+All representations use the same transformer architecture: 2 layers, $\dmodel = 128$, 4 heads, GELU activation, $\text{norm\_first} = \text{True}$, learned token and positional embeddings, untied linear unembedding. Total parameter count: 427,253 (core: 396,544).
+
+\paragraph{Dataset.} For $p = 113$, we generate all $|G| \times N = 48 \times 112 = 5{,}376$ triples $(g, g^x, x)$ over all 48 generators ($\varphi(112) = 48$). Train/test split: 30\% train (1,612 examples), 70\% test (3,764 examples), seed 42. The split is at the level of underlying triples, before representation encoding.
+
+\paragraph{Optimizer.} AdamW with learning rate $\text{lr} = 10^{-3}$, weight decay starting at $\text{wd} = 0.05$ and ramping by 0.05 every 1,000 epochs after memorization to a maximum of $\text{wd}_{\max} = 0.30$ (computed from the LUMI formula $\text{wd}_{\max} = \min(0.30, 0.30 \sqrt{393{,}000 / n_{\text{core}}})$). Gradient clipping at 1.0. No dropout. Mixed precision (AMP) enabled.
+
+\paragraph{Grokking criterion.} $T_{\mathrm{grok}}$ is defined as the first epoch where test accuracy $\geq 0.95$ with a stability window of 5 consecutive evaluations above 0.90. ``Epoch'' means one full pass through the training set (one optimizer step per minibatch, full dataset per epoch). Failed runs are censored at their final epoch.
+
+\paragraph{Compute axes.} Because RAW (sequence length 5) and CRT (sequence length 9) have different sequence lengths, we report both optimizer steps and approximate tokens consumed. Wall-clock is reported as a secondary, hardware-dependent metric.
+
+\paragraph{Use of AI tools.} This work used AI assistance (Devin, an AI coding agent from Cognition) for the following tasks: (1) implementing training and analysis scripts, (2) running computational experiments, (3) generating figures and tables, and (4) drafting portions of the manuscript. All scientific claims, experimental design, and conclusions were determined by the author. All code and results were verified by the author. The author takes full responsibility for the content of this paper.
+
+\subsection{Algebraic Structure Scores}
+\label{sec:structure_scores}
+
+To quantify what each representation preserves, we define:
+
+\begin{equation}
+    \Shom(\phi) = \frac{1}{|G|^2} \sum_{u,v \in G} \mathbf{1}[\phi(uv) = \phi(u) \oplus \phi(v)]
+\end{equation}
+where $\oplus$ is coordinate-wise addition in $\Z_a \times \Z_b$. For TRUE CRT, $\Shom = 1$; for a random bijection, $\Shom \approx 1/|G|$.
+
+We also define a translation-equivariance score:
+\begin{equation}
+    \Strans = \E_c \left[\max_\Delta P_y[\phi(cy) = \phi(y) \oplus \Delta]\right]
+\end{equation}
+and measure true-factor partition preservation via adjusted Rand index (ARI) between the partition induced by $\phi_A$ (resp.\ $\phi_B$) and the true CRT partition.
+
+\Cref{tab:structure} (Appendix) shows that CURRENT SCRAMBLED has $\Shom = 1.0$---it preserves \emph{all} algebraic structure---while R3 has $\Shom \approx 0.008$.
+
+% ====================================================================
+\section{The SCRAMBLED Isomorphism Audit}
+\label{sec:audit}
+% ====================================================================
+
+A critical methodological question is whether ``SCRAMBLED'' actually tests what it claims. The current SCRAMBLED representation applies a single fixed permutation $\pi: G \to G$ to all four CRT positions:
+\begin{equation}
+    (g_b, g_a, h_b, h_a) \mapsto (\pi(g_b), \pi(g_a), \pi(h_b), \pi(h_a)).
+\end{equation}
+
+\begin{theorem}[SCRAMBLED-CRT Conjugacy]
+\label{thm:conjugacy}
+Let $M_{\text{CRT}}$ be a CRT model with embedding matrix $E$ and unembed matrix $W$. Let $M_{\text{SCR}}$ be a SCRAMBLED model with embedding $E'$ where $E'[\text{tok}(\pi(y))] = E[\text{tok}(y)]$ for all $y$, and the same $W$. Then for every input, $M_{\text{CRT}}$ and $M_{\text{SCR}}$ produce identical outputs.
+\end{theorem}
+
+\begin{proof}
+Since the model uses learned categorical embeddings (no numeric encoding of token values) and input/output embeddings are \emph{untied}, permuting input embedding rows exactly absorbs the token permutation. The output classifier $W$ is unaffected. Verified numerically: max logit difference $= 0.00$.
+\end{proof}
+
+\begin{corollary}
+CURRENT SCRAMBLED does not destroy algebraic structure. It has $\Shom = 1.0$, $\Strans = 1.0$, $\ARI = 1.0$. Any behavioral similarity between SCRAMBLED and CRT is expected, not surprising.
+\end{corollary}
+
+This finding corrects a potential misinterpretation: the speed of SCRAMBLED grokking does \emph{not} demonstrate that algebraic alignment is unnecessary, because SCRAMBLED preserves all algebraic structure via vocabulary relabeling. (See the $\Z_6$ toy example in the Appendix for an illustration of information-preserving vs.\ structure-preserving maps.)
+
+% ====================================================================
+\section{2D CRT Fourier Analysis}
+\label{sec:fourier}
+% ====================================================================
+
+\subsection{Method}
+
+For each checkpoint, we extract hidden activations $H(x) \in \R^d$ at the EOS position for all group elements. We index by CRT coordinates $x \leftrightarrow (r_7, r_{16})$ and compute the 2D DFT per hidden dimension. We classify energy into:
+\begin{align}
+    \EA &= \sum_{k_A \neq 0, k_B = 0} E(k_A, k_B), \quad
+    \EB = \sum_{k_A = 0, k_B \neq 0} E(k_A, k_B), \\
+    \EAB &= \sum_{k_A \neq 0, k_B \neq 0} E(k_A, k_B).
+\end{align}
+The interaction ratio $\Rint = \EAB / (\EA + \EB + \EAB)$ measures how nonseparable the representation is. We mean-center activations before computing the DFT, and report nonconstant energy only.
+
+\subsection{Final-State Results}
+
+RAW has $\EAB \approx 0.65$ (interaction-rich), while CRT-BOTH has $\EAB \approx 0.01$ (separable). This is a qualitative difference: RAW's internal representation is \emph{nonseparable} across CRT factors, while CRT's is \emph{separable}. This supports the claim that RAW and CRT develop \emph{different internal representational organizations}.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.75\textwidth]{figures/fig3_fourier_heatmaps.pdf}
+\caption{2D CRT Fourier spectra at Layer 1 for RAW (left) and CRT (right). RAW shows substantial cross-factor energy ($k_A \neq 0, k_B \neq 0$), while CRT concentrates energy in the separable axes ($k_A = 0$ or $k_B = 0$).}
+\label{fig:fourier_heatmaps}
+\end{figure}
+
+% ====================================================================
+\section{Temporal Formation of the Internal Representation}
+\label{sec:temporal}
+% ====================================================================
+
+Using 32 dense checkpoints (epochs 0--65K) from a RAW run ($p=113$, seed 42), we reconstruct the temporal trajectory.
+
+\subsection{Interaction Energy Forms Before Grokking}
+
+\textbf{Key finding}: $\EAB$ rises from 0.35 to 0.52 during epochs 15K--30K, while test accuracy remains flat at 0.31--0.33. The interaction structure forms $\sim$20K epochs before grokking. Full temporal data in \Cref{tab:temporal} (Appendix).
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.75\textwidth]{figures/fig2_temporal_eab.pdf}
+\caption{Temporal formation of interaction energy ($\EAB$, blue) and test accuracy (red) for RAW ($p=113$, seed 42). $\EAB$ rises during the plateau (epochs 15K--30K), well before the grokking transition (green region, epochs 40K--50K).}
+\label{fig:temporal_eab}
+\end{figure}
+
+\subsection{Equivariance is Concurrent, Not Predictive}
+
+$\Aeq$ rises simultaneously with test accuracy (0.22 $\to$ 0.52 $\to$ 0.89 at the same epochs as 0.48 $\to$ 0.79 $\to$ 0.95). Equivariance is a \emph{concurrent symptom}, not a leading indicator.
+
+\subsection{CRT Components Decodable Before Generalization}
+
+Linear probes for $x \bmod 7$ and $x \bmod 16$ reach 0.47--0.48 accuracy by epoch 15K, while full $x$ accuracy doesn't reach 0.95 until epoch 50K. The model discovers CRT component information before learning to recombine it.
+
+\paragraph{Limitation.} Temporal analysis uses a single RAW seed. Replication on additional seeds is needed for confidence intervals.
+
+% ====================================================================
+\section{Causal Ablation of Fourier Modes}
+\label{sec:causal}
+% ====================================================================
+
+\subsection{Method}
+
+For each layer, we construct orthonormal bases $U_A$, $U_B$, $U_{AB}$ from the Fourier-derived subspaces. We ablate by projecting out: $h' = (I - \alpha P_U) h$.
+
+\paragraph{Top-k ablation.} To address the rank-mismatch problem (the $AB$ subspace is much larger than $A$ or $B$), we perform \emph{top-k} ablation: for $k \in \{2, 4, 8, 16\}$, we take the top-$k$ directions from each subspace by singular value. This ensures fair comparison across subspaces of different ranks.
+
+\paragraph{Random controls.} For each structured ablation, we construct:
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Rank-matched random}: 100 random $k$-dimensional subspaces.
+    \item \textbf{Variance-matched random}: 100 random subspaces matched in activation variance.
+\end{itemize}
+With 100 controls, the minimum achievable permutation $p$-value is $< 0.01$.
+
+\paragraph{Separate data.} Subspaces are identified on a construction set (50\% of data) and evaluated on a separate evaluation set (remaining 50\%), preventing overfitting to evaluation examples.
+
+\subsection{Results}
+
+Top-$k$ ablation at Layer 1 (100 rank-matched + 100 variance-matched random controls, separate construction/evaluation data) shows catastrophic damage for all subspaces: $U_A$ k=4: $\Delta = -0.894$; $U_B$ k=4: $\Delta = -0.888$; $U_{AB}$ k=4: $\Delta = -0.924$. Random controls: $|\Delta| < 0.012$ (rank-matched), $|\Delta| < 0.009$ (variance-matched). All structured ablations at 0th percentile, $p < 0.01$. Full results in \Cref{tab:topk_ablation} (Appendix).
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.70\textwidth]{figures/fig4_ablation_dose_response.pdf}
+\caption{Top-$k$ causal ablation dose-response at Layer 1 (RAW, $p=113$). Structured ablation of $U_A$, $U_B$, and $U_{AB}$ (solid lines) causes catastrophic damage increasing with $k$. Rank-matched random controls (shaded bands) remain near zero. All structured ablations at 0th percentile, $p < 0.01$.}
+\label{fig:ablation_dose}
+\end{figure}
+
+% ====================================================================
+\section{Negative Controls: A Hierarchy of Algebraic Structures}
+\label{sec:controls}
+% ====================================================================
+
+\subsection{The $\Z_6$ Toy Example}
+
+To make the distinction precise, consider $\Z_6 \cong \Z_2 \times \Z_3$. The true CRT map $\psi(x) = (x \bmod 2, x \bmod 3)$ satisfies $\psi(x+y) = \psi(x) \oplus \psi(y)$. A random bijection $\phi$ preserves information but breaks this: e.g., $\phi(1) = (1,2)$, so $\phi(1) \oplus \phi(1) = (0,1) \neq \phi(2) = (1,0)$. \emph{Both representations contain exactly the same information and use the same $2 \times 3$ interface, but only CRT preserves the group law.} In the actual experiment, $\phi$ is constructed directly from public group elements $y$, not from target exponents $x$.
+
+\subsection{Control Representations}
+
+We construct a hierarchy of information-preserving controls that systematically vary which algebraic properties are preserved:
+
+\paragraph{R3: Global Random Bijection.} A random bijection $\phi: G \to \Z_a \times \Z_b$ with $\Shom \approx 0.008$. Preserves information, two-coordinate interface, cardinalities, and sequence length. Destroys the group law, the true factor partition ($\ARI \approx 0$), and translation equivariance ($\Strans \approx 0.047$).
+
+\paragraph{R3O: Order-Matched Random.} Random bijection constrained to preserve element-order statistics. Destroys the multiplication table while preserving order distribution and generator/non-generator status.
+
+\paragraph{R4: Mixed Radix.} Deterministic two-coordinate encoding by sorted element order. Factorized but non-algebraic.
+
+\paragraph{R2: Permuted CRT.} CRT with independent per-factor permutations. Preserves the A/B partition but destroys within-factor ordering.
+
+\paragraph{ROLE-DECOUPLED CRT.} CRT channels with \emph{different} random permutations for generator vs.\ result positions. Preserves the A/B partition but destroys the shared relabeling conjugacy that made SCRAMBLED trivial.
+
+\subsection{Results}
+
+\begin{table}[h]
+\centering
+\caption{Grokking results across all representations ($p=113$). Representations preserving the true CRT factor partition grok; representations destroying it fail.}
+\label{tab:grokking}
+\begin{tabular}{lccccc}
+\toprule
+Representation & $\Shom$ & Partition? & Grokked? & $\Tgrok$ & Seeds \\
+\midrule
+RAW & --- & No & Yes (slow) & $\sim$50K & 1 \\
+TRUE CRT & 1.0 & Yes & Yes (fast) & $\sim$20K & 1 \\
+CURRENT SCRAMBLED & 1.0 & Yes & Yes (fast) & $\sim$16K & 1 \\
+PERMUTED CRT (R2) & --- & Yes & \textbf{Yes} & $\sim$8K & 1 \\
+ROLE-DECOUPLED CRT & --- & Yes & \textbf{Yes} & $\sim$26K & 1 \\
+\midrule
+GLOBAL RANDOM (R3) & 0.008 & No & \textbf{No} & $> 100$K & 3 \\
+ORDER-MATCHED (R3O) & 0.050 & No & \textbf{No} & $> 50$K & 1 \\
+MIXED RADIX (R4) & 0.024 & No & \textbf{No} & $> 50$K & 1 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key finding}: The results reveal a clean hierarchy:
+\begin{itemize}[leftmargin=*]
+    \item \emph{Representations preserving the true CRT factor partition grok}: TRUE CRT ($\sim$20K), PERMUTED CRT ($\sim$8K), ROLE-DECOUPLED CRT ($\sim$26K), and SCRAMBLED ($\sim$16K) all achieve near-perfect test accuracy.
+    \item \emph{Representations destroying the partition fail to grok}: R3 (3 mapping seeds, all fail after 100K/50K epochs), R3O (fails after 50K), and R4 (fails after 50K) all maintain train accuracy 1.0 with test accuracy $\approx 0.06$ despite full memorization and max weight decay.
+    \item \emph{Within-factor relabeling does not matter}: PERMUTED CRT groks even faster than TRUE CRT ($\sim$8K vs $\sim$20K), showing that within-factor symbol labels are irrelevant.
+    \item \emph{The shared relabeling conjugacy is not necessary}: ROLE-DECOUPLED CRT groks ($\sim$26K) despite using different permutations for generator vs.\ result positions, confirming that the trivial conjugacy of SCRAMBLED is not what drives grokking.
+\end{itemize}
+
+This supports a requirement for preservation of the true CRT factor partition---not merely factorization into two coordinates---in the rapid-generalization regime observed with CRT. R3 is factorized (two-coordinate, same interface as CRT) but destroys the partition, and fails to grok even after 100K epochs across 3 independent mapping seeds.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.75\textwidth]{figures/fig1_learning_curves.pdf}
+\caption{Learning curves for RAW, CRT-BOTH, and R3 (Global Random Bijection) at $p=113$, seed 42. CRT groks by $\sim$20K epochs; RAW groks by $\sim$50K; R3 fails to grok after 100K despite full memorization and max weight decay.}
+\label{fig:learning_curves}
+\end{figure}
+
+% ====================================================================
+\section{Related Work}
+% ====================================================================
+
+\paragraph{Grokking.} \citet{power2022grokking} introduced grokking, showing that neural networks memorize long before generalizing on small algorithmic datasets. \citet{nanda2023progress} provided the first mechanistic understanding via progress measures, showing that modular addition grokking involves the formation of Fourier circuits. \citet{liu2022towards} analyzed grokking circuits via mechanistic interpretability, identifying the role of weight decay in driving generalization. Our work extends this line to the discrete logarithm problem, which has richer algebraic structure than modular addition.
+
+\paragraph{Mechanistic interpretability.} \citet{elhage2021transformer} provided a mathematical framework for understanding transformer circuits. \citet{olsson2022inference} identified induction heads as a mechanism for in-context learning. Our Fourier analysis follows the approach of \citet{nanda2023progress}, extending it to a 2D CRT decomposition that separates factor-specific from interaction modes.
+
+\paragraph{Algebraic feature learning.} A growing body of work studies how neural networks learn algebraic structures. \citet{thirukovallur2024grokking} studied grokking on group multiplication, showing that transformers can learn group-theoretic structure. Our CRT decomposition provides a finer-grained analysis, distinguishing factor-specific from cross-factor computation.
+
+\paragraph{Symmetry and equivariance.} The role of symmetry in neural network learning has been studied extensively. Equivariance to group operations is a key property of algebraic representations. Our equivariance metric $\Aeq$ measures whether the network's internal representation respects the group structure, complementing the Fourier analysis.
+
+\paragraph{Probing.} \citet{belinkov2022probing} surveyed the promises and pitfalls of probing classifiers. We use linear probes to measure the decodability of CRT components, with the caveat that probe accuracy does not imply causal use.
+
+\paragraph{Number theory.} The Chinese Remainder Theorem and related constructions are classical results in number theory \citep{hardy1979introduction}. Our use of CRT projections for DLP factorization follows standard cryptographic constructions.
+
+% ====================================================================
+\section{Detailed Comparison with the Companion Manuscript}
+\label{sec:differences}
+% ====================================================================
+
+For transparency, we provide a detailed comparison with the companion manuscript \citep{vesterlund2026grokking}, which is currently under review at the Journal of Machine Learning Research (JMLR). Both manuscripts study DLP grokking at $p=113$ using the same anchor architecture (M04, 427K parameters, 2-layer transformer), but they ask fundamentally different scientific questions and use different experimental methods.
+
+\begin{table}[h]
+\centering
+\caption{Comparison of the present manuscript with the companion JMLR manuscript \citep{vesterlund2026grokking}.}
+\label{tab:differences}
+\begin{tabular}{p{0.35\textwidth}p{0.28\textwidth}p{0.28\textwidth}}
+\toprule
+\textbf{Aspect} & \textbf{Present manuscript} & \textbf{Companion (JMLR)} \\
+\midrule
+Scientific question & How does representation determine the internal algorithm? & Does DLP grokking exist and how does it scale with capacity? \\
+\addlinespace
+Experimental axis & Input representation (RAW, CRT, R3, R3O, R4, R2, ROLE-DECOUPLED) at fixed model size & Model capacity (12 models, 90K--14.4M params) at fixed representation (RAW) \\
+\addlinespace
+Key analysis & 2D CRT Fourier decomposition; interaction energy $E_{AB}$; top-$k$ causal ablation; negative-control hierarchy & Capacity sweep; grokking time $T_{90}$ vs.\ parameters; multiplicative-character spectrum; symbolic regression \\
+\addlinespace
+Main findings & Partition-preserving reps grok; partition-destroying fail; interaction structure forms before grokking; SCRAMBLED is conjugate to CRT & DLP grokking recurs across scales; non-monotonic capacity region; character alignment in anchor model \\
+\addlinespace
+Causal interventions & Top-$k$ Fourier-subspace ablation (100 random controls) & None (observational) \\
+\addlinespace
+Negative controls & R3, R3O, R4, R2, ROLE-DECOUPLED (information-preserving) & Prime-order and generator-OOD controls \\
+\addlinespace
+Shared elements & M04 anchor architecture; $p=113$; RAW baseline; 30/70 split & Same \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The two manuscripts are scientifically complementary: the companion establishes \emph{that} DLP grokking occurs and how it scales, while the present work asks \emph{what} internal algorithm is learned and how representation determines it. Neither manuscript's conclusions depend on the other's results. The shared M04 RAW baseline is cited from the companion work; all other experiments, analyses, and findings in this manuscript are original to this work.
+
+
+% ====================================================================
+\section{Discussion}
+% ====================================================================
+
+The temporal and causal evidence suggests a two-phase story for RAW:
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Plateau phase} (epochs 0--40K): The network builds an interaction-rich representation ($\EAB$ rises from 0.02 to 0.63). CRT components become linearly decodable. But the readout is not yet correct.
+    \item \textbf{Grokking phase} (epochs 40K--50K): The network learns to read out the interaction representation. Test accuracy and equivariance rise concurrently.
+\end{enumerate}
+
+For CRT, the factored input makes phase 1 unnecessary---the representation is already separable---so grokking occurs much faster.
+
+\subsection{Why SCRAMBLED Was Misleading}
+
+Because the model uses learned categorical embeddings with untied input/output, a global token permutation is exactly absorbable by the embedding table. SCRAMBLED is not a different representation from the model's perspective---it is the same representation with relabeled symbols. This is a general pitfall: any ``scrambling'' that preserves the categorical token interface may be vacuous if the model can learn arbitrary embeddings.
+
+\subsection{The Factor Partition Hierarchy}
+
+The negative control hierarchy reveals that the critical property for rapid generalization is preservation of the true CRT factor partition:
+\begin{itemize}[leftmargin=*]
+    \item \emph{Factorization alone is not sufficient}: R3, R3O, and R4 are all factorized (two-coordinate) but fail to grok.
+    \item \emph{The true factor partition is necessary}: All representations preserving the A/B partition grok; all destroying it fail.
+    \item \emph{Within-factor labels are irrelevant}: PERMUTED CRT groks faster than TRUE CRT.
+    \item \emph{Position-specific relabeling is tolerable}: ROLE-DECOUPLED CRT groks despite breaking the shared conjugacy.
+\end{itemize}
+
+\subsection{Implications for Grokking Theory}
+
+Our results suggest that:
+\begin{itemize}[leftmargin=*]
+    \item \emph{Factorization alone is not sufficient}: R3 is factorized but fails to grok.
+    \item \emph{Algebraic alignment supports rapid generalization}: CRT (with $\Shom = 1$) groks rapidly; R3 (with $\Shom \approx 0.008$) does not.
+    \item \emph{Different representations induce different internal organizations}: RAW uses interaction-rich computation; CRT uses separable computation.
+    \item \emph{The interaction structure is a prerequisite, not a consequence}: $\EAB$ forms before grokking.
+\end{itemize}
+
+% ====================================================================
+\section{Limitations}
+% ====================================================================
+
+\begin{enumerate}[leftmargin=*]
+    \item Temporal analysis uses a single RAW seed. Multiple seeds needed for confidence intervals.
+    \item R3 is tested with 3 mapping seeds (all fail to grok), but only 1 training seed per mapping. Additional training seeds would strengthen robustness.
+    \item All experiments are at $p=113$; scaling to $p=337$ and $p=601$ is future work.
+    \item The token namespace is shared between input and output, creating potential coupling. A namespace-separated architecture would provide a stronger control.
+    \item Fourier analysis aggregates over generators; per-generator Fourier analysis would provide a finer-grained picture.
+    \item Top-$k$ ablation is on the RAW model only; CRT-BOTH and SCRAMBLED ablation with top-$k$ is pending.
+\end{enumerate}
+
+% ====================================================================
+\section{Conclusion}
+% ====================================================================
+
+We have shown that RAW and CRT-trained DLP models develop qualitatively different internal representational organizations, distinguished by interaction energy in a CRT Fourier decomposition. The interaction-rich representation in RAW forms during the plateau, before grokking. A critical audit reveals that the previously studied SCRAMBLED representation is a vacuous relabeling of CRT. A hierarchy of negative controls shows that representations preserving the true CRT factor partition grok, while representations destroying it fail to grok even after 100K epochs across 3 mapping seeds. Top-$k$ causal ablation with 100 random controls confirms that $A$-, $B$-, and $AB$-Fourier modes are causally necessary for computation.
+
+These findings suggest that the input representation does not merely affect \emph{how fast} a network learns, but \emph{what internal algorithm} it discovers.
+
+% ====================================================================
+\section*{Data Availability Statement}
+% ====================================================================
+
+All training and analysis code, configuration files, and experiment data supporting the findings of this study are available in the public repository at \url{https://github.com/VesterlundCoder/mi-dlp} \citep{vesterlund2026mi_dlp_repo}. The DLP datasets are deterministic finite mathematical objects generated from the code; no external data are used. Checkpoint manifests with SHA256 hashes are provided in the repository. The companion manuscript \citep{vesterlund2026grokking} is archived on Zenodo with DOI \url{https://doi.org/10.5281/zenodo.22813397}.
+
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+% ====================================================================
+\appendix
+\section{Algebraic Structure Scores}
+\label{app:tables}
+% ====================================================================
+
+\begin{table}[h]
+\centering
+\caption{Algebraic structure scores for each representation ($p = 113$, $a = 7$, $b = 16$).}
+\label{tab:structure}
+\begin{tabular}{lcccc}
+\toprule
+Representation & $\Shom$ & $\Strans$ & $\ARI_A$ & $\ARI_B$ \\
+\midrule
+TRUE CRT & 1.0000 & 1.0000 & 1.0000 & 1.0000 \\
+CURRENT SCRAMBLED & 1.0000 & 1.0000 & 1.0000 & 1.0000 \\
+GLOBAL RANDOM (R3) & $0.008 \pm 0.001$ & $0.047 \pm 0.001$ & $0.005 \pm 0.017$ & --- \\
+MIXED RADIX (R4) & 0.024 & 0.033 & 0.009 & $-0.013$ \\
+ORDER-MATCHED (R3O) & $0.050 \pm 0.002$ & $0.075 \pm 0.003$ & --- & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[h]
+\centering
+\caption{Final-state Fourier energy across representations (Layer 1, $p=113$).}
+\label{tab:fourier_final}
+\begin{tabular}{lcccc}
+\toprule
+Variant & $\EA$ & $\EB$ & $\EAB$ & $\Rint$ \\
+\midrule
+RAW (grokked) & 0.10 & 0.24 & 0.65 & 0.66 \\
+CRT-BOTH & 0.09 & 0.22 & 0.01 & 0.03 \\
+SCRAMBLED & 0.08 & 0.21 & 0.02 & 0.07 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[h]
+\centering
+\caption{Temporal evolution of $\EAB$ and test accuracy (RAW, $p=113$, seed 42). $T_{\mathrm{grok}} \approx 50$K.}
+\label{tab:temporal}
+\begin{tabular}{rcccc}
+\toprule
+Epoch & $\EAB$ & $\Rint$ & $\Aeq$ & Test Acc \\
+\midrule
+0 & 0.020 & 0.42 & 0.003 & 0.012 \\
+5,000 & 0.153 & 0.25 & 0.131 & 0.097 \\
+15,000 & 0.349 & 0.42 & 0.166 & 0.309 \\
+25,000 & 0.453 & 0.52 & 0.184 & 0.402 \\
+30,000 & 0.521 & 0.59 & 0.162 & 0.325 \\
+40,000 & 0.633 & 0.65 & 0.223 & 0.482 \\
+50,000 & 0.641 & 0.67 & 0.889 & 0.952 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[h]
+\centering
+\caption{Top-$k$ causal ablation (Layer 1, $\alpha = 1.0$, $p=113$, RAW model). $\Delta A_x$ is accuracy change. Random controls: mean $\pm$ std over 100 trials. All structured ablations at 0th percentile, $p < 0.01$.}
+\label{tab:topk_ablation}
+\begin{tabular}{llccc}
+\toprule
+Subspace & $k$ & $\Delta A_x$ (structured) & Random (rank-matched) & Random (var-matched) \\
+\midrule
+$U_A$ & 2 & $-0.628$ & $+0.011 \pm 0.003$ & $+0.008 \pm 0.005$ \\
+$U_A$ & 4 & $-0.894$ & $+0.010 \pm 0.004$ & $+0.007 \pm 0.005$ \\
+$U_B$ & 2 & $-0.608$ & $+0.011 \pm 0.003$ & $+0.008 \pm 0.005$ \\
+$U_B$ & 4 & $-0.888$ & $+0.010 \pm 0.004$ & $+0.007 \pm 0.005$ \\
+$U_B$ & 8 & $-0.968$ & $+0.010 \pm 0.005$ & $+0.005 \pm 0.007$ \\
+$U_B$ & 16 & $-0.968$ & $+0.005 \pm 0.007$ & $+0.001 \pm 0.009$ \\
+$U_{AB}$ & 2 & $-0.686$ & $+0.011 \pm 0.003$ & $+0.008 \pm 0.005$ \\
+$U_{AB}$ & 4 & $-0.924$ & $+0.010 \pm 0.004$ & $+0.007 \pm 0.005$ \\
+$U_{AB}$ & 8 & $-0.968$ & $+0.010 \pm 0.005$ & $+0.005 \pm 0.007$ \\
+$U_{AB}$ & 16 & $-0.960$ & $+0.005 \pm 0.007$ & $+0.001 \pm 0.009$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ====================================================================
+\section{The $\Z_6$ Toy Example}
+% ====================================================================
+
+Consider $\Z_6 \cong \Z_2 \times \Z_3$. The true CRT map $\psi(x) = (x \bmod 2, x \bmod 3)$ satisfies $\psi(x+y) = \psi(x) \oplus \psi(y)$. A random bijection $\phi$ preserves information but breaks this: e.g., $\phi(1) = (1,2)$, so $\phi(1) \oplus \phi(1) = (0,1) \neq \phi(2) = (1,0)$. \emph{Both representations contain exactly the same information and use the same $2 \times 3$ interface, but only CRT preserves the group law.} In the actual experiment, $\phi$ is constructed directly from public group elements $y$, not from target exponents $x$.
+
+% ====================================================================
+\section{Reproducibility}
+% ====================================================================
+
+\paragraph{Code.} All training and analysis scripts are available at \url{https://github.com/VesterlundCoder/mi-dlp} \citep{vesterlund2026mi_dlp_repo}. Key files: \texttt{train\_controls.py} (control training), \texttt{topk\_ablation.py} (causal ablation), \texttt{temporal\_analysis.py} (temporal analysis), \texttt{mi\_suite.py} (MI suite), \texttt{comprehensive\_audit.py} (CRT audit).
+
+\paragraph{Hyperparameters.} See \Cref{sec:protocol} for full details. All runs use: $p=113$, $d_{\mathrm{model}}=128$, 4 heads, 2 layers, lr=$10^{-3}$, wd\_start=0.05, wd\_max=0.30, wd\_step=0.05, wd\_ramp=1000, train\_frac=0.30, seed=42.
+
+\paragraph{Data.} All triples $(g, g^x, x)$ over all 48 generators ($\varphi(112)=48$) and all 112 exponents. Train/test split: 30\%/70\%, seed 42, at the level of underlying triples before encoding.
+
+\paragraph{Compute.} Training on Apple Silicon (MPS) and CPU. Each 50K-epoch run takes approximately 10--20 minutes on MPS.
+
+\end{document}
