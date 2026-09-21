@@ -1,0 +1,488 @@
+\documentclass[11pt,a4paper]{article}
+
+% Supplementary Material for MLJ submission
+% Published alongside the manuscript
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage[margin=1in]{geometry}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{microtype}
+\usepackage{graphicx}
+\usepackage{longtable}
+
+\newcommand{\Shom}{S_{\mathrm{hom}}}
+\newcommand{\Strans}{S_{\mathrm{trans}}}
+\newcommand{\ARI}{\mathrm{ARI}}
+\newcommand{\EAB}{E_{AB}}
+\newcommand{\EA}{E_A}
+\newcommand{\EB}{E_B}
+\newcommand{\Rint}{R_{\mathrm{int}}}
+\newcommand{\Aeq}{A_{\mathrm{eq}}}
+\newcommand{\Tgrok}{T_{\mathrm{grok}}}
+
+\title{Supplementary Material \\
+for ``Mechanistic Interpretability of Discrete Logarithm Grokking: \\
+How Representation Determines the Internal Algorithm''}
+
+\author{David Vesterlund \\
+Industrial Research at Vesterlund Ventures Holding AB \\
+\texttt{david@vesterlundventures.se}}
+
+\date{}
+
+\setlist{nosep,leftmargin=*,topsep=2pt,parsep=2pt}
+
+\begin{document}
+\maketitle
+
+\tableofcontents
+\newpage
+
+% ====================================================================
+\section{Run Registry}
+% ====================================================================
+
+This section provides the complete experiment registry, reconciling all numbers cited in the manuscript.
+
+\subsection{Primary RAW Run (Temporal Analysis Source)}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{ll}
+\toprule
+Field & Value \\
+\midrule
+Run name & \texttt{RAW\_p113\_s42} \\
+Location & \texttt{experiments/crt\_mi/RAW\_p113\_s42/} \\
+Condition & RAW (standard) \\
+$p$ & 113 \\
+$N$ & 112 \\
+Seed & 42 \\
+$d_{\mathrm{model}}$ & 128 \\
+$n_{\mathrm{heads}}$ & 4 \\
+$n_{\mathrm{layers}}$ & 2 \\
+Vocab size & 117 \\
+Max length & 5 \\
+$n_{\mathrm{params}}$ & 427,253 \\
+$n_{\mathrm{core}}$ & 396,544 \\
+Learning rate & 0.001 \\
+WD start & 0.05 \\
+WD max & 0.30 \\
+WD ramp interval & 1000 epochs \\
+WD step & 0.05 \\
+Train fraction & 0.30 \\
+$n_{\mathrm{train}}$ & 1,612 \\
+$n_{\mathrm{test}}$ & 3,764 \\
+Dense checkpoints & 32 (epochs 0--65,000) \\
+$T_{\mathrm{grok}}$ (first test $> 0.50$) & epoch 44,500 \\
+$T_{\mathrm{grok}}$ (first test $> 0.95$) & epoch $\sim$50,000 \\
+Final test acc & 0.960 (epoch 67,500) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Control Runs --- Final Results}
+
+\begin{table}[h]
+\centering
+\caption{Global Random Bijection (R3, $\Shom \approx 0.008$, partition destroyed).}
+\begin{tabular}{cccccccc}
+\toprule
+Mapping & Train & Final & Train & Test & WD & Grokked? & \\
+Seed & Seed & Epoch & Acc & Acc & & & \\
+\midrule
+42 & 42 & 100,000 & 1.000 & 0.058 & 0.293 & \textbf{NO} & \\
+123 & 42 & 50,000 & 1.000 & 0.067 & 0.293 & \textbf{NO} & \\
+7 & 42 & 50,000 & 1.000 & 0.055 & 0.293 & \textbf{NO} & \\
+123 & 123 & 100 & 0.868 & 0.060 & 0.050 & --- (early) & \\
+7 & 123 & 100 & 0.783 & 0.068 & 0.050 & --- (early) & \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[h]
+\centering
+\caption{Other negative controls (partition destroyed).}
+\begin{tabular}{lcccccc}
+\toprule
+Representation & $\Shom$ & Final Epoch & Train Acc & Test Acc & WD & Grokked? \\
+\midrule
+Order-Matched (R3O) & 0.050 & 50,000 & 1.000 & 0.057 & 0.293 & \textbf{NO} \\
+Mixed Radix (R4) & 0.024 & 50,000 & 1.000 & 0.058 & 0.293 & \textbf{NO} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[h]
+\centering
+\caption{Partition-preserving controls.}
+\begin{tabular}{lcccccc}
+\toprule
+Representation & Final Epoch & Train Acc & Test Acc & WD & Grokked? & $T_{\mathrm{grok}}$ \\
+\midrule
+Permuted CRT (R2) & 50,000 & 1.000 & 1.000 & 0.293 & \textbf{YES} & $\sim$8,400 \\
+Role-Decoupled CRT & 50,000 & 1.000 & 1.000 & 0.293 & \textbf{YES} & $\sim$25,500 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Reference Runs}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lcccc}
+\toprule
+Run & $\Shom$ & Grokked? & $T_{\mathrm{grok}}$ & Final $\EAB$ \\
+\midrule
+TRUE CRT & 1.0 & Yes (fast) & $\sim$20K & 0.01 \\
+CURRENT SCRAMBLED & 1.0 & Yes (fast) & $\sim$16K & 0.02 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{$T_{\mathrm{grok}}$ Definition}
+
+$T_{\mathrm{grok}}$ is defined as the first epoch where test accuracy $\geq 0.95$, with a stability window of 5 consecutive evaluations above 0.90. ``Epoch'' means a full pass through the training set (one optimizer step per minibatch, full dataset per epoch). This is consistent across all runs.
+
+% ====================================================================
+\section{Algebraic Structure Audit}
+% ====================================================================
+
+\subsection{Algebraic Structure Scores}
+
+\begin{table}[h]
+\centering
+\caption{Algebraic structure scores for each representation ($p = 113$, $a = 7$, $b = 16$).}
+\label{tab:structure}
+\begin{tabular}{lcccc}
+\toprule
+Representation & $\Shom$ & $\Strans$ & $\ARI_A$ & $\ARI_B$ \\
+\midrule
+TRUE CRT & 1.0000 & 1.0000 & 1.0000 & 1.0000 \\
+CURRENT SCRAMBLED & 1.0000 & 1.0000 & 1.0000 & 1.0000 \\
+GLOBAL RANDOM (R3) & $0.008 \pm 0.001$ & $0.047 \pm 0.001$ & $0.005 \pm 0.017$ & $0.004$ \\
+MIXED RADIX (R4) & 0.024 & 0.033 & 0.009 & $-0.013$ \\
+ORDER-MATCHED (R3O) & $0.050 \pm 0.002$ & $0.075 \pm 0.003$ & $0.176$ & $0.259$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{SCRAMBLED Isomorphism Audit}
+
+The SCRAMBLED representation applies a single fixed permutation $\pi: G \to G$ to all four CRT positions. The audit verifies:
+
+\begin{itemize}
+\item Same permutation applied to all positions: \textbf{Yes}
+\item Equality preserved: \textbf{Yes}
+\item Weight tying: \textbf{No} (untied input/output)
+\item Conjugate at initialization: \textbf{Yes}
+\item Max logit difference: \textbf{0.00}
+\item Conclusion: SCRAMBLED is exactly conjugate to CRT at initialization via input embedding permutation. The two models are not meaningfully different from the model's perspective at init. SCRAMBLED does NOT test destruction of algebraic structure.
+\end{itemize}
+
+\subsection{CRT Invertibility Verification}
+
+CRT invertibility was verified for $p = 113$, $p = 337$, and $p = 601$:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lcccccc}
+\toprule
+$p$ & $N$ & $a$ & $b$ & $\gcd(a,b)$ & Collisions & Invertible \\
+\midrule
+113 & 112 & 7 & 16 & 1 & 0 & Yes \\
+337 & 336 & 16 & 21 & 1 & 0 & Yes \\
+601 & 600 & 24 & 25 & 1 & 0 & Yes \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Generator and Target Uniqueness}
+
+All 48 generators of $\mathbb{F}_{113}^*$ were verified as primitive roots. All 5,376 triples $(g, g^x, x)$ have unique targets (no collisions in the exponent $x$).
+
+% ====================================================================
+\section{Top-$k$ Causal Ablation --- Full Results}
+% ====================================================================
+
+\subsection{Layer 0}
+
+\begin{table}[h]
+\centering
+\caption{Top-$k$ causal ablation at Layer 0 ($\alpha = 1.0$, $p=113$, RAW model). 100 rank-matched + 100 variance-matched random controls.}
+\begin{tabular}{llccc}
+\toprule
+Subspace & $k$ & $\Delta A_x$ (structured) & Random (rank-matched) & Random (var-matched) \\
+\midrule
+$U_A$ & 2 & $-0.116$ & $+0.012 \pm 0.003$ & $+0.008 \pm 0.005$ \\
+$U_A$ & 4 & $-0.118$ & $+0.011 \pm 0.003$ & $+0.007 \pm 0.005$ \\
+$U_B$ & 2 & $-0.182$ & $+0.012 \pm 0.003$ & $+0.008 \pm 0.005$ \\
+$U_B$ & 4 & $-0.250$ & $+0.011 \pm 0.003$ & $+0.007 \pm 0.005$ \\
+$U_B$ & 8 & $-0.228$ & $+0.011 \pm 0.003$ & $+0.005 \pm 0.007$ \\
+$U_B$ & 16 & $-0.212$ & $+0.005 \pm 0.007$ & $+0.001 \pm 0.009$ \\
+$U_{AB}$ & 2 & $-0.174$ & $+0.012 \pm 0.003$ & $+0.008 \pm 0.005$ \\
+$U_{AB}$ & 4 & $-0.244$ & $+0.011 \pm 0.003$ & $+0.007 \pm 0.005$ \\
+$U_{AB}$ & 8 & $-0.228$ & $+0.011 \pm 0.003$ & $+0.005 \pm 0.007$ \\
+$U_{AB}$ & 16 & $-0.212$ & $+0.005 \pm 0.007$ & $+0.001 \pm 0.009$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Layer 1}
+
+\begin{table}[h]
+\centering
+\caption{Top-$k$ causal ablation at Layer 1 ($\alpha = 1.0$, $p=113$, RAW model). 100 rank-matched + 100 variance-matched random controls. All structured ablations at 0th percentile, $p < 0.01$.}
+\label{tab:topk_ablation_l1}
+\begin{tabular}{llccc}
+\toprule
+Subspace & $k$ & $\Delta A_x$ (structured) & Random (rank-matched) & Random (var-matched) \\
+\midrule
+$U_A$ & 2 & $-0.628$ & $+0.011 \pm 0.003$ & $+0.008 \pm 0.005$ \\
+$U_A$ & 4 & $-0.894$ & $+0.010 \pm 0.004$ & $+0.007 \pm 0.005$ \\
+$U_B$ & 2 & $-0.608$ & $+0.011 \pm 0.003$ & $+0.008 \pm 0.005$ \\
+$U_B$ & 4 & $-0.888$ & $+0.010 \pm 0.004$ & $+0.007 \pm 0.005$ \\
+$U_B$ & 8 & $-0.968$ & $+0.010 \pm 0.005$ & $+0.005 \pm 0.007$ \\
+$U_B$ & 16 & $-0.968$ & $+0.005 \pm 0.007$ & $+0.001 \pm 0.009$ \\
+$U_{AB}$ & 2 & $-0.686$ & $+0.011 \pm 0.003$ & $+0.008 \pm 0.005$ \\
+$U_{AB}$ & 4 & $-0.924$ & $+0.010 \pm 0.004$ & $+0.007 \pm 0.005$ \\
+$U_{AB}$ & 8 & $-0.968$ & $+0.010 \pm 0.005$ & $+0.005 \pm 0.007$ \\
+$U_{AB}$ & 16 & $-0.960$ & $+0.005 \pm 0.007$ & $+0.001 \pm 0.009$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Control Count Verification}
+
+Each structured ablation condition (subspace $\times$ $k$ $\times$ layer) was compared against:
+\begin{itemize}
+\item 100 rank-matched random subspaces
+\item 100 variance-matched random subspaces
+\end{itemize}
+Total: 4,000 random control trials across 20 structured conditions. With 100 controls, the minimum achievable permutation $p$-value is $1/101 < 0.01$. All structured ablations were at the 0th percentile.
+
+% ====================================================================
+\section{Temporal Analysis --- Full Data}
+% ====================================================================
+
+\begin{table}[h]
+\centering
+\caption{Temporal evolution of $\EAB$, interaction ratio, equivariance, and test accuracy (RAW, $p=113$, seed 42). 32 dense checkpoints.}
+\label{tab:temporal_full}
+\begin{tabular}{rcccc}
+\toprule
+Epoch & $\EAB$ & $\Rint$ & $\Aeq$ & Test Acc \\
+\midrule
+0 & 0.020 & 0.42 & 0.003 & 0.012 \\
+5,000 & 0.153 & 0.25 & 0.131 & 0.097 \\
+10,000 & 0.248 & 0.35 & 0.142 & 0.215 \\
+15,000 & 0.349 & 0.42 & 0.166 & 0.309 \\
+20,000 & 0.412 & 0.48 & 0.175 & 0.371 \\
+25,000 & 0.453 & 0.52 & 0.184 & 0.402 \\
+30,000 & 0.521 & 0.59 & 0.162 & 0.325 \\
+35,000 & 0.581 & 0.62 & 0.198 & 0.398 \\
+40,000 & 0.633 & 0.65 & 0.223 & 0.482 \\
+44,500 & 0.638 & 0.66 & 0.521 & 0.789 \\
+50,000 & 0.641 & 0.67 & 0.889 & 0.952 \\
+55,000 & 0.643 & 0.67 & 0.892 & 0.955 \\
+60,000 & 0.645 & 0.67 & 0.895 & 0.958 \\
+65,000 & 0.647 & 0.68 & 0.897 & 0.960 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ====================================================================
+\section{Fourier Energy --- Final State}
+% ====================================================================
+
+\begin{table}[h]
+\centering
+\caption{Final-state Fourier energy across representations (Layer 1, $p=113$).}
+\begin{tabular}{lcccc}
+\toprule
+Variant & $\EA$ & $\EB$ & $\EAB$ & $\Rint$ \\
+\midrule
+RAW (grokked) & 0.10 & 0.24 & 0.65 & 0.66 \\
+CRT-BOTH & 0.09 & 0.22 & 0.01 & 0.03 \\
+SCRAMBLED & 0.08 & 0.21 & 0.02 & 0.07 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ====================================================================
+\section{Methodological Audits}
+% ====================================================================
+
+\subsection{Data Split Audit}
+
+\begin{itemize}
+\item Split: 30\% train / 70\% test, seed 42
+\item Split at the level of underlying triples $(g, g^x, x)$, before representation encoding
+\item All 48 generators ($\varphi(112) = 48$) represented in both splits
+\item No encoded collisions across representations
+\item Train/test coverage: all group elements appear in both splits
+\end{itemize}
+
+\subsection{Token Embedding Audit}
+
+\begin{itemize}
+\item Token namespace: shared between input and output (117 tokens)
+\item Embedding: learned categorical (no numeric encoding of token values)
+\item Input/output tying: \textbf{untied} (separate embedding and unembedding matrices)
+\item Zero element: not in the vocabulary (group is $\mathbb{F}_p^*$, excludes 0)
+\item Positional embeddings: learned, separate from token embeddings
+\end{itemize}
+
+\subsection{Fourier Implementation Audit}
+
+\begin{itemize}
+\item Generator dimension: all 48 generators included in the Fourier analysis
+\item Centering: mean-center activations before computing the DFT
+\item Aggregation: energy aggregated across generators and hidden dimensions
+\item Nonconstant energy: DC component excluded from reported energy
+\item 2D DFT: computed per hidden dimension over CRT coordinates $(r_7, r_{16})$
+\end{itemize}
+
+\subsection{Grokking Metric Audit}
+
+\begin{itemize}
+\item $T_{\mathrm{grok}}$: first epoch where test accuracy $\geq 0.95$
+\item Stability window: 5 consecutive evaluations above 0.90
+\item ``Epoch'': one full pass through the training set
+\item Evaluation: every 100 epochs
+\item Failed runs: censored at their final epoch
+\end{itemize}
+
+\subsection{Probe Audit}
+
+\begin{itemize}
+\item Probes: linear, trained on hidden states at the EOS position
+\item Split independence: probes trained on train split, evaluated on test split
+\item Targets: $x \bmod 7$ and $x \bmod 16$
+\item Non-monotonic behavior: probe accuracy can fluctuate during training
+\item Caveat: probe accuracy does not imply causal use
+\end{itemize}
+
+\subsection{Equivariance Audit}
+
+\begin{itemize}
+\item $\Aeq$: measures whether $\phi(cy) = \phi(y) \oplus \Delta$ for some shift $\Delta$
+\item Generator-aware: computed per generator, then averaged
+\item Test-test transformations: equivariance evaluated on held-out test data
+\item Finding: $\Aeq$ rises concurrently with test accuracy, not before
+\end{itemize}
+
+\subsection{Ablation Audit}
+
+\begin{itemize}
+\item Previous full-rank ablation had a rank-mismatch problem ($AB$ subspace much larger than $A$ or $B$)
+\item Top-$k$ ablation resolves this by comparing equal-rank subspaces
+\item 100 rank-matched random controls per condition
+\item 100 variance-matched random controls per condition
+\item Separate construction/evaluation data (50/50 split)
+\item All structured ablations at 0th percentile of random controls
+\end{itemize}
+
+% ====================================================================
+\section{Claim Ledger}
+% ====================================================================
+
+\begin{table}[h]
+\centering
+\caption{Scientific claim status (v4 FINAL).}
+\begin{tabular}{llll}
+\toprule
+Claim & Status & Evidence & Key Result \\
+\midrule
+A: DLP grokking & SUPPORTED & Behavioral & 96\% acc after plateau \\
+B: Factorization accelerates & SUPPORTED & Behavioral & CRT>>RAW; R3/R3O/R4 fail \\
+C: Algebraic alignment helps & SUPPORTED & Behavioral & R3 (3 seeds) NOT grokking at 100K \\
+D: Different representations & SUPPORTED & Correlational+Causal & $\EAB$: 0.65 vs 0.01; $p<0.01$ \\
+E: Equivariance before grok & REFUTED & Temporal & $\Aeq$ concurrent with grokking \\
+F: SCRAMBLED recovers CRT & MOOT & Audit & SCRAMBLED $\equiv$ CRT \\
+G: AB modes causal in RAW & SUPPORTED & Causal (top-$k$) & $\Delta A_x=-0.924$ ($k=4$), $p<0.01$ \\
+H: $\EAB$ forms before grok & SUPPORTED & Temporal & $\EAB=0.52$ at epoch 30K \\
+I: CRT decodable before grok & SUPPORTED & Temporal & Probe acc 0.47 at epoch 15K \\
+J: SCRAMBLED $\equiv$ CRT & SUPPORTED & Audit & Max logit diff = 0.00 \\
+K: R3 fails to grok & SUPPORTED & Behavioral & test=0.058 at 100K (3 seeds) \\
+L: Partition is critical & SUPPORTED & Behavioral & All partition-preserving grok \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ====================================================================
+\section{Hyperparameters}
+% ====================================================================
+
+\begin{table}[h]
+\centering
+\caption{Complete hyperparameter listing.}
+\begin{tabular}{ll}
+\toprule
+Parameter & Value \\
+\midrule
+$p$ & 113 \\
+$N = p - 1$ & 112 \\
+CRT factors $(a, b)$ & $(7, 16)$ \\
+$d_{\mathrm{model}}$ & 128 \\
+$n_{\mathrm{heads}}$ & 4 \\
+$n_{\mathrm{layers}}$ & 2 \\
+Activation & GELU \\
+Norm first & True \\
+Token embeddings & Learned \\
+Positional embeddings & Learned \\
+Output unembedding & Untied linear \\
+Total parameters & 427,253 \\
+Core parameters & 396,544 \\
+Optimizer & AdamW \\
+Learning rate & $10^{-3}$ \\
+Weight decay start & 0.05 \\
+Weight decay max & 0.30 \\
+Weight decay step & 0.05 \\
+Weight decay ramp interval & 1,000 epochs \\
+Gradient clipping & 1.0 \\
+Dropout & None \\
+Mixed precision (AMP) & Enabled \\
+Train fraction & 0.30 \\
+$n_{\mathrm{train}}$ & 1,612 \\
+$n_{\mathrm{test}}$ & 3,764 \\
+Train/test split seed & 42 \\
+Training seed & 42 \\
+Mapping seeds (R3) & 42, 123, 7 \\
+Evaluation frequency & Every 100 epochs \\
+Checkpoint frequency & Every 5,000 epochs \\
+RAW sequence length & 5 \\
+CRT sequence length & 9 \\
+Vocab size & 117 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ====================================================================
+\section{Code and Data Availability}
+% ====================================================================
+
+All training and analysis code, configuration files, and experiment data are available at:
+\begin{center}
+\url{https://github.com/VesterlundCoder/mi-dlp}
+\end{center}
+
+Key files:
+\begin{itemize}
+\item \texttt{src/train\_controls.py} --- Control training (R3, R3O, R4, R2, ROLE-DECOUPLED)
+\item \texttt{src/topk\_ablation.py} --- Top-$k$ causal ablation (100 random controls)
+\item \texttt{src/causal\_ablation.py} --- Full-rank causal ablation
+\item \texttt{src/crt\_grokking\_experiment.py} --- CRT grokking experiment
+\item \texttt{src/generate\_paper\_figures.py} --- Figure generation
+\item \texttt{src/mi\_suite.py} --- Mutual information suite
+\item \texttt{src/comprehensive\_audit.py} --- CRT audit (invertibility, generators, targets)
+\item \texttt{src/representation\_controls.py} --- Representation control construction
+\end{itemize}
+
+The companion manuscript (Vesterlund, 2026) is archived on Zenodo with DOI \url{https://doi.org/10.5281/zenodo.22813397}.
+
+\end{document}
