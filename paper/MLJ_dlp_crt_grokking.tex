@@ -53,18 +53,20 @@
 How Representation Determines the Internal Algorithm}
 
 \author{David Vesterlund\thanks{Corresponding author: \texttt{david@vesterlundventures.se}} \\
-Industrial Research at Vesterlund Ventures Holding AB \\
+Industrial Research at Vesterlund Ventures Holding AB, Stockholm, Sweden \\
 \texttt{david@vesterlundventures.se}}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-We study the mechanistic interpretability of grokking on the discrete logarithm problem (DLP). For a cyclic group $G = \langle g \rangle$ of order $N = p - 1$, a transformer is trained to predict $x$ from $(g, h = g^x)$. We compare representations that factor the problem via the Chinese Remainder Theorem (CRT) against the raw representation, and ask: \emph{what internal algorithm does the network discover, and how does the representation determine it?}
+We study how the input representation of an algebraic learning problem determines the internal algorithm that a neural network discovers. We train transformers to solve the discrete logarithm problem (DLP) and compare a raw representation against representations that expose or disrupt the Chinese Remainder Theorem (CRT) factorization of the underlying cyclic group. Our three main discoveries are:
 
-Our key findings are: (1)~DLP exhibits grokking, and algebraically aligned CRT projections substantially accelerate generalization compared to the raw representation. (2)~RAW and CRT-trained models develop markedly different algebraic representations, distinguished by the cross-factor interaction energy $\EAB$ in a 2D CRT Fourier decomposition (RAW: $\EAB \approx 0.65$; CRT: $\EAB \approx 0.01$). (3)~The interaction-rich representation in RAW forms \emph{during the plateau}, well before visible generalization. (4)~Information-matched controls that destroy the true algebraic structure (Global Random Bijection, $\Shom \approx 0.008$) lose CRT's rapid-generalization advantage, supporting a requirement for algebraic alignment---not merely factorization---in the rapid-generalization regime observed with CRT.
+First, different representations produce different internal algorithms. The raw representation develops an interaction-rich internal organization with approximately 65\% of Fourier energy in cross-factor interaction modes, while the CRT representation develops a separable organization with only 1\% interaction energy, despite both solving the same task.
 
-A critical methodological audit reveals that the previously studied ``SCRAMBLED'' representation is exactly conjugate to CRT at initialization (max logit difference $= 0$), preserving all algebraic structure. It does not test destruction of algebra and cannot serve as evidence that algebraic alignment is unnecessary. A hierarchy of negative controls further shows that representations preserving the true CRT factor partition grok (PERMUTED CRT at $\sim$8K epochs, ROLE-DECOUPLED CRT at $\sim$26K), while representations destroying the partition fail to grok even after 100K epochs (Global Random Bijection, Order-Matched Random, Mixed Radix). Top-$k$ causal ablation with 100 rank-matched and variance-matched random controls confirms that $A$-, $B$-, and $AB$-Fourier modes are causally necessary for computation ($\Delta A_x < -0.89$ for $k \geq 4$ vs.\ $|\Delta| < 0.012$ for random controls, $p < 0.01$).
+Second, the interaction structure forms during the memorization plateau, well before visible generalization. The cross-factor interaction energy rises from 35\% to 52\% between epochs 15,000 and 30,000, while test accuracy remains near 30\% and only generalizes at epoch 50,000.
+
+Third, algebraic alignment, not merely factorization, is required for rapid generalization. A hierarchy of information-preserving controls shows that representations preserving the true CRT factor partition grok (CRT at 20K epochs, Permuted CRT at 8K, Role-Decoupled CRT at 26K), while representations destroying the partition fail to grok even after 100K epochs across three independent seeds (Global Random Bijection, Order-Matched Random, Mixed Radix). A critical audit also reveals that the previously studied SCRAMBLED representation is exactly conjugate to CRT at initialization and does not test algebra destruction. Top-$k$ causal ablation with 100 random controls confirms that the identified Fourier modes are causally necessary for computation.
 \end{abstract}
 
 % ====================================================================
@@ -431,6 +433,12 @@ Our results suggest that:
 We have shown that RAW and CRT-trained DLP models develop qualitatively different internal representational organizations, distinguished by interaction energy in a CRT Fourier decomposition. The interaction-rich representation in RAW forms during the plateau, before grokking. A critical audit reveals that the previously studied SCRAMBLED representation is a vacuous relabeling of CRT. A hierarchy of negative controls shows that representations preserving the true CRT factor partition grok, while representations destroying it fail to grok even after 100K epochs across 3 mapping seeds. Top-$k$ causal ablation with 100 random controls confirms that $A$-, $B$-, and $AB$-Fourier modes are causally necessary for computation.
 
 These findings suggest that the input representation does not merely affect \emph{how fast} a network learns, but \emph{what internal algorithm} it discovers.
+
+% ====================================================================
+\section*{Author Contributions Statement}
+% ====================================================================
+
+David Vesterlund is the sole author of this manuscript and conducted all aspects of the work, including study design, experimental implementation, data analysis, interpretation of results, and manuscript preparation.
 
 % ====================================================================
 \section*{Data Availability Statement}
